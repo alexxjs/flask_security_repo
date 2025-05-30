@@ -27,7 +27,7 @@ app.register_blueprint(auth_bp)
 with app.app_context():
     db.create_all()
 
-# test
+# testt
 
 # Define password policy
 password_policy = PasswordValidator()
