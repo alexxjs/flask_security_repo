@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Advisor Dashboard</h2>
+
+<hr>
+<h4>🔍 Find a Client</h4>
+<form method="POST" class="form-inline mb-4">
+    <div class="form-group">
+        <label for="client_username">Select Client:</label>
+        <select name="client_username" class="form-control mx-2" required>
+            <option disabled selected>Select a client</option>
+            {% for client in clients %}
+            <option value="{{ client.username }}">{{ client.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Load</button>
+</form>
+
+{% if selected_client %}
+<hr>
+<h4>👤 Viewing Portfolio for: <strong>{{ selected_client.username }}</strong></h4>
+
+<!-- Portfolio Display -->
+{% set portfolio = {} %}
+{% set total = 0 %}
+{% for tx in selected_client.transactions %}
+    {% if tx.action == 'BUY' %}
+        {% set portfolio = portfolio.update({tx.asset: portfolio.get(tx.asset, 0) + tx.quantity}) %}
+    {% elif tx.action == 'SELL' %}
+        {% set portfolio = portfolio.update({tx.asset: portfolio.get(tx.asset, 0) - tx.quantity}) %}
+    {% endif %}
+{% endfor %}
+
+<table class="table table-sm table-bordered">
+    <thead>
+        <tr>
+            <th>Asset</th>
+            <th>Qty</th>
+            <th>Est. Value (£)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for asset, qty in portfolio.items() if qty > 0 %}
+        <tr>
+            <td>{{ asset }}</td>
+            <td>{{ qty }}</td>
+            <td>
+                {% set value = (assets[asset] * qty) %}
+                {{ value|round(2) }}
+                {% set total = total + value %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="2"><strong>Total Value</strong></td>
+            <td><strong>£{{ total|round(2) }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Transaction Form for Client -->
+<hr>
+<h4>💸 Submit Transaction for {{ selected_client.username }}</h4>
+<form method="POST" action="{{ url_for('submit_advisor_transaction') }}">
+    <input type="hidden" name="client_id" value="{{ selected_client.id }}">
+
+    <div class="form-group">
+        <label>Asset</label>
+        <select name="asset" class="form-control" required onchange="updateAdvisorPrice()">
+            <option disabled selected>Select an asset</option>
+            {% for asset, price in assets.items() %}
+            <option value="{{ asset }}" data-price="{{ price }}">{{ asset }} (£{{ price }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Action</label>
+        <select name="action" class="form-control" required>
+            <option value="BUY">Buy</option>
+            <option value="SELL">Sell</option>
+        </select>
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Quantity</label>
+        <input type="number" name="quantity" step="0.01" class="form-control" required oninput="updateAdvisorPrice()">
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Total (£)</label>
+        <input type="text" id="advisor_total" class="form-control" readonly>
+    </div>
+
+    <div class="form-group mt-2">
+        <label>Notes (optional)</label>
+        <textarea name="notes" class="form-control"></textarea>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-success">Submit Transaction</button>
+        <a href="{{ url_for('chat_view', peer_id=selected_client.id) }}" class="btn btn-outline-secondary">
+            💬 Message Client
+        </a>
+    </div>
+    
+</form>
+
+{% if not selected_client.advisor_id %}
+<form action="{{ url_for('assign_client', client_id=selected_client.id) }}" method="POST" class="mt-3">
+    <button class="btn btn-warning btn-sm"> Assign This Client to Me</button>
+</form>
+{% elif selected_client.advisor_id == current_user.id %}
+<p class="text-success mt-2">You are assigned to this client.</p>
+{% else %}
+<p class="text-danger mt-2">Assigned to another advisor: {{ selected_client.advisor.username }}</p>
+{% endif %}
+
+
+<script>
+function updateAdvisorPrice() {
+    const assetSelect = document.querySelector("select[name='asset']");
+    const qty = parseFloat(document.querySelector("input[name='quantity']").value) || 0;
+    const price = parseFloat(assetSelect.options[assetSelect.selectedIndex].getAttribute("data-price")) || 0;
+    document.getElementById("advisor_total").value = (qty * price).toFixed(2);
+}
+</script>
+{% endif %}
+{% endblock %}
+
+

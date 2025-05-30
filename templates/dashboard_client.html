@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Welcome, {{ current_user.full_name or current_user.username }}!</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+
+
+<div class="row mt-4">
+    <!-- LEFT SIDE -->
+    <div class="col-md-8">
+        <!-- Portfolio Section -->
+        <h4>📊 Your Portfolio</h4>
+        {% if portfolio %}
+        
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Asset</th>
+                    <th>Qty</th>
+                    <th>Price (£)</th>
+                    <th>Value (£)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in portfolio %}
+                <tr>
+                    <td>{{ row.asset }}</td>
+                    <td>{{ row.quantity }}</td>
+                    <td>{{ row.price }}</td>
+                    <td>{{ row.value }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total Value</strong></td>
+                    <td><strong>£{{ total_value }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <p>No active holdings.</p>
+        {% endif %}
+
+        <hr>
+        
+        <!-- Recent Transactions -->
+        <h4>🧾 Recent Transactions</h4>
+        {% if recent_tx %}
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Asset</th>
+                    <th>Action</th>
+                    <th>Qty</th>
+                    <th>Notes</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in recent_tx %}
+                <tr>
+                    <td>{{ tx.asset }}</td>
+                    <td>{{ tx.action }}</td>
+                    <td>{{ tx.quantity }}</td>
+                    <td>{{ tx.notes }}</td>
+                    <td>{{ tx.timestamp.strftime("%d %b %Y %H:%M") }}</td>
+                </tr>
+                {% endfor %}
+                
+            </tbody>
+        </table>
+        {% else %}
+        <p>No recent transactions.</p>
+        {% endif %}
+        <a href="{{ url_for('update_profile') }}" class="btn btn-secondary btn-sm float-end">Edit Profile</a>
+        {% if current_user.advisor_id %}
+        <a href="{{ url_for('chat_view', peer_id=current_user.advisor_id) }}" class="btn btn-primary btn-sm">
+            💬 Chat with Your Advisor
+        </a>
+        {% else %}
+        <p class="text-muted">No advisor assigned yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="col-md-4">
+        <h4>💸 New Transaction</h4>
+        <form method="POST" action="{{ url_for('initiate_transaction') }}">
+            <div class="form-group">
+                <label for="asset">Asset</label>
+                <select name="asset" id="asset" class="form-control" required onchange="updateDashboardPrice()">
+                    <option disabled selected>Choose an asset</option>
+                    {% for asset, price in assets.items() %}
+                    <option value="{{ asset }}" data-price="{{ price }}">{{ asset }} (£{{ price }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group mt-2">
+                <label for="action">Action</label>
+                <select name="action" class="form-control" required>
+                    <option value="BUY">Buy</option>
+                    <option value="SELL">Sell</option>
+                </select>
+            </div>
+
+            <div class="form-group mt-2">
+                <label for="quantity">Quantity</label>
+                <input name="quantity" type="number" step="0.01" class="form-control" required oninput="updateDashboardPrice()">
+            </div>
+
+            <div class="form-group mt-2">
+                <label>Total (£)</label>
+                <input type="text" id="dashboard_total_price" class="form-control" readonly>
+            </div>
+
+            <div class="form-group mt-2">
+                <label for="notes">Notes (optional)</label>
+                <textarea name="notes" class="form-control"></textarea>
+            </div>
+
+            <button class="btn btn-primary mt-3 w-100">Submit</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateDashboardPrice() {
+    const assetSelect = document.getElementById("asset");
+    const quantity = parseFloat(document.querySelector("input[name='quantity']").value) || 0;
+    const selected = assetSelect.options[assetSelect.selectedIndex];
+    const price = parseFloat(selected.getAttribute("data-price")) || 0;
+    document.getElementById("dashboard_total_price").value = (price * quantity).toFixed(2);
+}
+</script>
+
+{% endblock %}

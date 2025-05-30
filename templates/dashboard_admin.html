@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>🔐 Admin Dashboard</h2>
+
+<hr>
+<h4>👥 User Management</h4>
+<table class="table table-striped">
+    <a href="{{ url_for('create_user') }}" class="btn btn-sm btn-success mb-3">
+        ➕ Create New User
+    </a>    
+    <thead>
+        <tr><th>Username</th><th>Role</th><th>Full Name</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.role }}</td>
+            <td>{{ user.full_name }}</td>
+            <td>
+                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form action="{{ url_for('deactivate_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+<h4>📜 Recent Audit Logs</h4>
+<table class="table table-sm table-bordered">
+    <thead>
+        <tr><th>Time</th><th>User</th><th>Event</th></tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ log.user.username if log.user else 'System' }}</td>
+            <td>{{ log.event }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<hr>
+<h4>🛠️ Security Maintenance</h4>
+<p><strong>Last Patch Check:</strong> {{ system_status.last_patch_check.strftime('%Y-%m-%d %H:%M') if system_status.last_patch_check else 'Never' }}</p>
+<p><strong>Next Recommended Check:</strong> {{ system_status.next_recommended_check.strftime('%Y-%m-%d %H:%M') if system_status.next_recommended_check else 'N/A' }}</p>
+
+<form method="POST" action="{{ url_for('run_patch_check') }}">
+    <button class="btn btn-sm btn-warning">🔄 Run Patch Check (Manual)</button>
+</form>
+
+{% endblock %}

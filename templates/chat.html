@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>💬 Secure Chat with {{ peer_user.username }}</h2>
+
+<div id="chat-window" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+    <ul id="messages" class="list-unstyled mb-0"></ul>
+</div>
+
+<form id="chatForm" method="POST">
+    <input type="hidden" name="recipient_id" value="{{ peer_user.id }}">
+    <div class="input-group">
+        <input type="text" name="message" class="form-control" placeholder="Type your message..." required>
+        <button class="btn btn-primary" type="submit">Send</button>
+    </div>
+</form>
+
+<script>
+function fetchMessages() {
+    fetch("/messages/{{ peer_user.id }}")
+        .then(response => response.json())
+        .then(data => {
+            const messagesList = document.getElementById("messages");
+            messagesList.innerHTML = "";
+
+            data.forEach(msg => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${msg.sender}</strong> <small class="text-muted">[${msg.timestamp}]</small><br>${msg.body}`;
+                li.style.marginBottom = "10px";
+                li.style.padding = "8px";
+                li.style.borderRadius = "6px";
+                li.style.backgroundColor = (msg.sender === "{{ current_user.username }}") ? "#d1e7dd" : "#f8d7da";
+                messagesList.appendChild(li);
+            });
+
+            const chatWindow = document.getElementById("chat-window");
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+}
+
+document.getElementById("chatForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch("/messages/send", {
+        method: "POST",
+        body: formData
+    }).then(response => {
+        if (response.ok) {
+            this.reset();
+            fetchMessages();
+        } else {
+            alert("❌ Failed to send message.");
+        }
+    });
+});
+
+fetchMessages();
+setInterval(fetchMessages, 5000);  // Refresh every 5 seconds
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Welcome to MyFinance Inc.</h2>
+<p>Select your role to continue:</p>
+
+<div>
+    <a href="{{ url_for('auth.login', role='client') }}" class="btn btn-primary">Client Login</a>
+    <a href="{{ url_for('auth.login', role='employee') }}" class="btn btn-secondary">Employee Login</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-success">Client Register</a>
+
+</div>
+{% endblock %}

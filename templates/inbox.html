@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📥 Secure Messages from Your Advisor</h2>
+
+{% if messages %}
+<div class="list-group">
+    {% for msg in messages %}
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+            <strong>From: {{ msg.from }}</strong>
+            <small class="text-muted">{{ msg.timestamp }}</small>
+        </div>
+        <p class="mb-0 mt-1">{{ msg.body }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>No messages yet from your advisor.</p>
+{% endif %}
+{% endblock %}
