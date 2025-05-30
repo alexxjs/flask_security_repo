@@ -1,38 +1,40 @@
-name: "CodeQL Analysis"
+name: CodeQL Analysis
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   schedule:
-    - cron: '0 1 * * 0'  # weekly scan on Sunday 1am
+    - cron: '0 0 * * 0'  # weekly scan
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
 
 jobs:
   analyze:
     name: Analyze with CodeQL
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write  # Required for GitHub Code Scanning alerts
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
       matrix:
-        language: [python]  # Supports multiple languages
+        language: [ 'python' ]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
