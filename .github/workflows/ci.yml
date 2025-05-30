@@ -22,27 +22,10 @@ jobs:
     - name: --Install pip dependencies (minimal to run snyk CLI only)--
       run: pip install --upgrade pip
 
-    - name: --Install jq for parsing JSON--
-      run: sudo apt-get install jq
-
-    - name: --Run Snyk Code Scan and save output--
+    - name: --Run Snyk Code Scan (SAST only)--
+      uses: snyk/actions/python@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      run: |
-        npx snyk code test --all-projects --json > snyk_output.json || true
-
-    - name: --Fail if Medium or High found--
-      run: |
-        MEDIUM_COUNT=$(jq '[.runs[].results[] | select(.rule.severity == "medium")] | length' snyk_output.json)
-        HIGH_COUNT=$(jq '[.runs[].results[] | select(.rule.severity == "high")] | length' snyk_output.json)
-
-        echo "Medium issues: $MEDIUM_COUNT"
-        echo "High issues: $HIGH_COUNT"
-
-        if [ "$MEDIUM_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
-          echo "❌ Medium or High severity issues found."
-          exit 1
-        else
-          echo "✅ No Medium or High severity issues found. Proceeding..."
-        fi
-
+      with:
+        command: code test  # SAST scan
+        args: "--all-projects"
