@@ -11,6 +11,8 @@ import qrcode
 import pyotp
 from io import BytesIO
 
+#imports
+
 auth_bp = Blueprint('auth', __name__)
 key = load_decrypted_key()
 
