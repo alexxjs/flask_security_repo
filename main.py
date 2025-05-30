@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
 from config import Config
 from models import db, User, Transaction, SecureMessage, AuditLog, SystemStatus
-from auth import auth_bp
+from auth import auth_bp,validate_password_strength
 from secure_kms import load_decrypted_key
 from encryption import decrypt_data, encrypt_data
 from functools import wraps
@@ -464,6 +464,11 @@ def create_user():
         phone = request.form['phone']
         role = request.form['role']
 
+        valid, msg = validate_password_strength(password)
+        if not valid:
+            flash(msg, "danger")
+            return redirect(url_for('create_user'))
+        
         if User.query.filter_by(username=username).first():
             flash("Username already exists.", "danger")
             return redirect(url_for('create_user'))

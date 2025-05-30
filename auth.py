@@ -10,6 +10,22 @@ from secure_kms import load_decrypted_key
 import qrcode
 import pyotp
 from io import BytesIO
+import re
+
+def validate_password_strength(password):
+    """Ensure password meets defined policy (min 8 chars, mixed case, number, special char)"""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must include at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must include at least one lowercase letter."
+    if not re.search(r"[0-9]", password):
+        return False, "Password must include at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must include at least one special character."
+    return True, ""
+
 
 #imports
 
@@ -37,6 +53,11 @@ def register():
         password = request.form['password']
         email = request.form['email']
         phone = request.form['phone']
+
+        valid, msg = validate_password_strength(password)
+        if not valid:
+            flash(msg, "danger")
+            return redirect(url_for('auth.register'))
 
         if User.query.filter_by(username=username).first():
             flash("Username already exists.", "danger")
