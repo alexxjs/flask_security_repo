@@ -54,9 +54,8 @@ def register():
         email = request.form['email']
         phone = request.form['phone']
 
-        # Password strength check
         if not password_policy.validate(password):
-            flash("Password must be 8–64 characters long, include upper and lower case letters, a number, and a symbol. No spaces allowed.", "danger")
+            flash("Password must be 8–64 chars with uppercase, lowercase, number, symbol, and no spaces.", "danger")
             return redirect(url_for('auth.register'))
 
         if User.query.filter_by(username=username).first():
@@ -68,7 +67,7 @@ def register():
 
         user = User(username=username, email_encrypted=encrypted_email, full_name="", role='client')
         user.phone_encrypted = encrypted_phone
-        user.set_password(password)
+        user.assign_password(password)
 
         db.session.add(user)
         db.session.commit()
@@ -78,7 +77,6 @@ def register():
         return redirect(url_for('auth.setup_2fa'))
 
     return render_template('register.html')
-
 
 
 
