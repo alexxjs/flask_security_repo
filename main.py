@@ -5,11 +5,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
 from config import Config
 from models import db, User, Transaction, SecureMessage, AuditLog, SystemStatus
-from auth import auth_bp,validate_password_strength
+from auth import auth_bp
 from secure_kms import load_decrypted_key
 from encryption import decrypt_data, encrypt_data
 from functools import wraps
 from assets import ASSET_CATALOG
+from password_validator import PasswordValidator
 from datetime import datetime, timedelta
 import subprocess
 
@@ -26,6 +27,18 @@ app.register_blueprint(auth_bp)
 with app.app_context():
     db.create_all()
 
+
+
+# Define password policy
+password_policy = PasswordValidator()
+password_policy \
+    .min(8) \
+    .max(64) \
+    .has().uppercase() \
+    .has().lowercase() \
+    .has().digits() \
+    .has().symbols() \
+    .has().no().spaces()
 
 # User loader
 @login_manager.user_loader
@@ -455,7 +468,6 @@ def deactivate_user(user_id):
 def create_user():
     key = load_decrypted_key()
 
-
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -464,11 +476,11 @@ def create_user():
         phone = request.form['phone']
         role = request.form['role']
 
-        valid, msg = validate_password_strength(password)
-        if not valid:
-            flash(msg, "danger")
+        # Password strength check
+        if not password_policy.validate(password):
+            flash("Password must be 8–64 characters long, include upper and lower case letters, a number, and a symbol. No spaces allowed.", "danger")
             return redirect(url_for('create_user'))
-        
+
         if User.query.filter_by(username=username).first():
             flash("Username already exists.", "danger")
             return redirect(url_for('create_user'))
@@ -482,8 +494,7 @@ def create_user():
 
         new_user.phone_encrypted = encrypt_data(phone.encode(), key)
         new_user.is_active = True
-        new_user.set_password(password) # noqa: S102
-
+        new_user.set_password(password)
 
         db.session.add(new_user)
         db.session.commit()
@@ -493,7 +504,6 @@ def create_user():
         return redirect(url_for('dashboard_admin'))
 
     return render_template('create_user.html')
-
 
 @app.route('/portfolio')
 @login_required

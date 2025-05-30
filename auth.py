@@ -12,19 +12,19 @@ import pyotp
 from io import BytesIO
 import re
 
-def validate_password_strength(password):
-    """Ensure password meets defined policy (min 8 chars, mixed case, number, special char)"""
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long."
-    if not re.search(r"[A-Z]", password):
-        return False, "Password must include at least one uppercase letter."
-    if not re.search(r"[a-z]", password):
-        return False, "Password must include at least one lowercase letter."
-    if not re.search(r"[0-9]", password):
-        return False, "Password must include at least one number."
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        return False, "Password must include at least one special character."
-    return True, ""
+from password_validator import PasswordValidator
+
+# Define password policy
+password_policy = PasswordValidator()
+password_policy \
+    .min(8) \
+    .max(64) \
+    .has().uppercase() \
+    .has().lowercase() \
+    .has().digits() \
+    .has().symbols() \
+    .has().no().spaces()
+
 
 
 #imports
@@ -54,9 +54,9 @@ def register():
         email = request.form['email']
         phone = request.form['phone']
 
-        valid, msg = validate_password_strength(password)
-        if not valid:
-            flash(msg, "danger")
+        # Password strength check
+        if not password_policy.validate(password):
+            flash("Password must be 8–64 characters long, include upper and lower case letters, a number, and a symbol. No spaces allowed.", "danger")
             return redirect(url_for('auth.register'))
 
         if User.query.filter_by(username=username).first():
@@ -68,13 +68,12 @@ def register():
 
         user = User(username=username, email_encrypted=encrypted_email, full_name="", role='client')
         user.phone_encrypted = encrypted_phone
-        user.set_password(password) # noqa: S102
+        user.set_password(password)
 
         db.session.add(user)
         db.session.commit()
 
-        log_event(user.id, f"Registered new account")
-
+        log_event(user.id, "Registered new account")
         login_user(user)
         return redirect(url_for('auth.setup_2fa'))
 
