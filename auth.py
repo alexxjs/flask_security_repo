@@ -66,6 +66,13 @@ def register():
 def login():
     role = request.args.get('role', 'client')
 
+    # Define a whitelist of valid roles and their dashboard endpoints
+    role_to_dashboard = {
+        'client': 'dashboard_client',
+        'advisor': 'dashboard_advisor',
+        'admin': 'dashboard_admin'
+    }
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -79,10 +86,17 @@ def login():
                 return redirect(url_for('auth.verify_2fa'))
             else:
                 login_user(user)
-                return redirect(url_for(f'dashboard_{user.role}'))
-            
-        log_event(None, f"Failed login attempt - username={username}")    
+                # Safely redirect using fixed route mapping
+                if user.role in role_to_dashboard:
+                    return redirect(url_for(role_to_dashboard[user.role]))
+                else:
+                    abort(403)  # Forbidden if role is unexpected
+
+        log_event(None, f"Failed login attempt - username={username}")
         flash("Invalid credentials or role mismatch", "danger")
+
+    return render_template('login.html', role=role)
+
 
     return render_template('login.html', role=role, show_2fa=False)
 
