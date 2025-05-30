@@ -33,15 +33,16 @@ jobs:
 
     - name: --Fail if Medium or High found--
       run: |
-        MEDIUM_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "medium")] | length' snyk_output.json)
-        HIGH_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "high")] | length' snyk_output.json)
+        MEDIUM_COUNT=$(jq '[.runs[].results[] | select(.rule.severity == "medium")] | length' snyk_output.json)
+        HIGH_COUNT=$(jq '[.runs[].results[] | select(.rule.severity == "high")] | length' snyk_output.json)
 
         echo "Medium issues: $MEDIUM_COUNT"
         echo "High issues: $HIGH_COUNT"
 
         if [ "$MEDIUM_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
-          echo "!!! Medium or High severity issues found !!!"
+          echo "❌ Medium or High severity issues found."
           exit 1
         else
-          echo "!!! No Medium or High severity issues found. Proceeding..."
+          echo "✅ No Medium or High severity issues found. Proceeding..."
         fi
+
