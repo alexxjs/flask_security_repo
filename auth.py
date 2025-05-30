@@ -68,7 +68,7 @@ def register():
 
         user = User(username=username, email_encrypted=encrypted_email, full_name="", role='client')
         user.phone_encrypted = encrypted_phone
-        user.set_password(password) # SNYK-IGNORE: password validated via custom policy
+        user.set_password(password) # noqa: S102
 
         db.session.add(user)
         db.session.commit()
