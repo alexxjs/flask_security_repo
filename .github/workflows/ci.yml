@@ -1,4 +1,4 @@
-name: build-and-scan
+name: Flask CI with Snyk Code Scan
 
 on:
   push:
